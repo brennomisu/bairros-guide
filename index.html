@@ -44,9 +44,10 @@ async function checkPwd(){
     setTimeout(()=>{
       g.remove();
       // Only call showUI() if initGM() hasn't already set it up.
-      // If it has (_uiShown=true), photos are already loading on live elements —
-      // calling showUI() again would recreate the chip <img> elements and lose those photos.
       if(!window._uiShown && typeof showUI==='function') showUI();
+      // Retry chip photos for any that are still blank (Places API slow / race condition).
+      // loadChipPhotos() re-looks up elements by ID and skips cached/loaded ones.
+      setTimeout(()=>{ if(mob() && psvc) loadChipPhotos(); }, 400);
     }, 400);
   } else {
     const inp = document.getElementById('gate-input');
@@ -1545,6 +1546,36 @@ document.addEventListener('DOMContentLoaded',()=>{
   setTimeout(boot,80);
 });
 
+/* ═══ CHIP PHOTO LOADER ═══
+   Uses textSearch (returns multiple results → more likely to find photos)
+   and re-looks up the element by ID inside the callback so it always
+   targets the live DOM node, regardless of any intervening showUI() calls. */
+function loadChipPhotos(){
+  HOODS.forEach((h,i)=>setTimeout(()=>{
+    if(!psvc) return;
+    const k='chip:'+h.id;
+    if(cache[k]){
+      const el=document.getElementById('ci-'+h.id);
+      if(el) el.src=cache[k];
+      return;
+    }
+    psvc.textSearch({
+      query:h.heroS,
+      location:new google.maps.LatLng(38.714,-9.148),
+      radius:8000
+    },(results,status)=>{
+      if(status!==google.maps.places.PlacesServiceStatus.OK) return;
+      const r=results?.find(p=>p.photos?.length>0);
+      if(!r) return;
+      const u=r.photos[0].getUrl({maxWidth:400,maxHeight:260});
+      cache[k]=u;
+      // Always re-lookup by ID — survives any DOM recreation between call and callback
+      const el=document.getElementById('ci-'+h.id);
+      if(el) el.src=u;
+    });
+  },i*150)); // 150ms spacing to stay within Places API rate limits
+}
+
 /* ═══ GOOGLE MAPS INIT ═══ */
 function initGM(){
   document.getElementById('setup').style.display='none';
@@ -1620,12 +1651,7 @@ function initGM(){
   psvc=new google.maps.places.PlacesService(gmap);
   setTimeout(()=>google.maps.event.trigger(gmap,'resize'),300);
   // ── Chip card photos — psvc is guaranteed ready here ──────────────
-  if(mob()){
-    HOODS.forEach((h,i)=>setTimeout(()=>{
-      const img=document.getElementById('ci-'+h.id); // <img> directly
-      if(img)lp(h.heroS,img,400);
-    },i*120));
-  }
+  if(mob()) loadChipPhotos();
 
   // ── Current location ──────────────────────────────────────────────
   // Only re-centre map if user is actually in Lisbon; otherwise keep default view.
