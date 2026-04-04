@@ -468,6 +468,18 @@ img { display: block }
   border-radius: 3px;
   background: rgba(60,60,67,.25);
 }
+/* Detail mode: float handle over photo so hero fills to the top edge */
+#sheet.detail-mode #hdl {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 10;
+  background: transparent;
+  height: 44px;
+  padding: 10px 0 0;
+}
+#sheet.detail-mode #hdl::after {
+  background: rgba(255,255,255,.6);
+}
 
 /* Sidebar header */
 #dh {
@@ -626,18 +638,18 @@ img { display: block }
   transition: opacity .5s ease;
 }
 .d-hero-full .iw img.on { opacity: 1 }
-/* Dual scrim: stronger at top (for close btn) and bottom (for text) */
+/* Dual scrim: stronger at bottom (for text) + bottom-left vignette for badge readability */
 .d-hero-overlay {
   position: absolute;
   inset: 0;
   z-index: 2;
-  background: linear-gradient(
-    to bottom,
-    rgba(0,0,0,0.42) 0%,
-    rgba(0,0,0,0.0)  30%,
-    rgba(0,0,0,0.0)  42%,
-    rgba(0,0,0,0.75) 100%
-  );
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(0,0,0,0.0)  0%,
+      rgba(0,0,0,0.0)  40%,
+      rgba(0,0,0,0.72) 100%
+    );
   pointer-events: none;
 }
 /* Close button: floating top-right on the photo */
@@ -670,13 +682,18 @@ img { display: block }
   padding: 0 18px 16px;
 }
 .d-fit-badge {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 5px;
-  margin-bottom: 5px;
+  margin-bottom: 7px;
+  background: rgba(0,0,0,0.32);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 4px 10px 4px 7px;
+  border-radius: 20px;
 }
 .d-fit-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0 }
-.d-fit-badge span { font-size: 11px; font-weight: 600; letter-spacing: .04em; color: rgba(255,255,255,.88) }
+.d-fit-badge span { font-size: 11px; font-weight: 600; letter-spacing: .04em; color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,.6) }
 .d-name {
   font-family: var(--font-display);
   font-size: 28px;
@@ -1935,6 +1952,7 @@ function pick(id,fromMap=false){
       </div>
     </div>`).join('');
 
+  document.getElementById('sheet').classList.add('detail-mode');
   document.getElementById('sc').innerHTML=`
     <div class="d-hero-full">
       <div class="iw" id="hi-${id}"><img src="" alt="${h.name}" onload="this.classList.add('on')"></div>
@@ -2024,6 +2042,7 @@ function close_(){
   });
   document.querySelectorAll('.ni,.chip').forEach(el=>el.classList.remove('on'));
   document.getElementById('bd').classList.remove('on');
+  document.getElementById('sheet').classList.remove('detail-mode');
   if(mob()){
     const sh=document.getElementById('sheet');
     sh.getBoundingClientRect(); // flush pending paint so transition starts from current position
