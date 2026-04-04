@@ -1522,6 +1522,14 @@ function initGM(){
   });
   psvc=new google.maps.places.PlacesService(gmap);
   setTimeout(()=>google.maps.event.trigger(gmap,'resize'),300);
+  // ── Chip card photos — psvc is guaranteed ready here ──────────────
+  if(mob()){
+    HOODS.forEach((h,i)=>setTimeout(()=>{
+      const w=document.getElementById('ci-'+h.id);
+      const img=w?.querySelector('img');
+      if(img&&!img.src)lp(h.S,img,400);
+    },i*120));
+  }
 
   // ── Current location ──────────────────────────────────────────────
   // Only re-centre map if user is actually in Lisbon; otherwise keep default view.
@@ -1683,12 +1691,7 @@ function showUI(){
         <div class="chip-img" id="ci-${h.id}"><img src="" alt="${h.name}" onload="this.classList.add('on')"></div>
         <div class="chip-vibes">${(h.vibe||[]).map(v=>`<span class="chip-vibe" style="background:${F[h.fit].stroke}">${v}</span>`).join('')}</div>
       </div>`).join('');
-    // Load hero photos — delay 600ms so psvc is ready
-    HOODS.forEach((h,i)=>setTimeout(()=>{
-      const w=document.getElementById('ci-'+h.id);
-      const img=w?.querySelector('img');
-      if(img)lp(h.heroS,img,400);
-    },600+i*130));
+    // Photos loaded in initGM() once psvc is guaranteed ready
   } else {
     document.getElementById('dh').style.display='block';
     document.getElementById('leg').style.display='flex';
