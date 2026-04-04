@@ -603,68 +603,99 @@ img { display: block }
 #sc::-webkit-scrollbar { width: 0 }
 
 /* ── Detail panel ── */
-.d-hdr {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 20px 20px 12px;
-  position: sticky;
-  top: 0;
+/* ── Detail hero: full-bleed photo with overlaid title (matches card style) ── */
+.d-hero-full {
+  position: relative;
+  width: 100%;
+  height: 260px;
+  flex-shrink: 0;
+  background: #1c1c1e; /* dark placeholder while photo loads */
+  overflow: hidden;
+}
+.d-hero-full .iw {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  background: none;
+}
+.d-hero-full .iw::before { display: none } /* shimmer covered by placeholder bg */
+.d-hero-full .iw img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity .5s ease;
+}
+.d-hero-full .iw img.on { opacity: 1 }
+/* Dual scrim: stronger at top (for close btn) and bottom (for text) */
+.d-hero-overlay {
+  position: absolute;
+  inset: 0;
   z-index: 2;
-  background: rgba(255,255,255,.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: .5px solid var(--separator);
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.42) 0%,
+    rgba(0,0,0,0.0)  30%,
+    rgba(0,0,0,0.0)  42%,
+    rgba(0,0,0,0.75) 100%
+  );
+  pointer-events: none;
 }
-.d-hdr-left { flex: 1; min-width: 0 }
-.d-fit-badge {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-bottom: 4px;
-}
-.d-fit-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0 }
-.d-fit-badge span { font-size: 11px; font-weight: 600; letter-spacing: .02em }
-.d-name {
-  font-family: var(--font-display);
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: -.6px;
-  line-height: 1.1;
-  color: var(--label);
-}
-.d-sub {
-  font-size: 13px;
-  color: var(--label-2);
-  margin-top: 3px;
-  letter-spacing: -.1px;
-}
+/* Close button: floating top-right on the photo */
 .d-close {
-  width: 28px;
-  height: 28px;
+  position: absolute;
+  top: 14px; right: 16px;
+  z-index: 5;
+  width: 30px; height: 30px;
   border-radius: 50%;
-  background: var(--bg-3);
+  background: rgba(0,0,0,0.38);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 13px;
-  color: var(--label-2);
-  flex-shrink: 0;
-  margin-left: 12px;
-  margin-top: 2px;
-  transition: background .15s;
+  color: rgba(255,255,255,.92);
   font-weight: 600;
+  transition: background .15s;
+  -webkit-tap-highlight-color: transparent;
 }
-.d-close:hover { background: var(--bg-3); color: var(--label) }
-
-.d-hero .iw { width: 100%; height: 200px }
-
+.d-close:hover { background: rgba(0,0,0,0.55) }
+/* Text content overlaid at the bottom of the hero */
+.d-hero-content {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  z-index: 3;
+  padding: 0 18px 16px;
+}
+.d-fit-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 5px;
+}
+.d-fit-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0 }
+.d-fit-badge span { font-size: 11px; font-weight: 600; letter-spacing: .04em; color: rgba(255,255,255,.88) }
+.d-name {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -.6px;
+  line-height: 1.1;
+  color: #fff;
+  text-shadow: 0 1px 5px rgba(0,0,0,.4);
+}
+.d-sub {
+  font-size: 13px;
+  color: rgba(255,255,255,.78);
+  margin-top: 3px;
+  letter-spacing: -.1px;
+}
 .vrow {
   display: flex;
   gap: 6px;
-  padding: 12px 20px 0;
+  padding: 10px 0 0;
   flex-wrap: wrap;
 }
 .vtag {
@@ -979,8 +1010,6 @@ img { display: block }
     display: none!important;
   }
   #sc.active { display: flex!important; flex-direction: column }
-  .d-hero .iw { height: 185px }
-
   /* Inset separator from icon */
   .ni::after { left: 74px }
 }
@@ -1906,21 +1935,21 @@ function pick(id,fromMap=false){
       </div>
     </div>`).join('');
 
-  // *** TITLE ABOVE PHOTO ***
   document.getElementById('sc').innerHTML=`
-    <div class="d-hdr">
-      <div class="d-hdr-left">
+    <div class="d-hero-full">
+      <div class="iw" id="hi-${id}"><img src="" alt="${h.name}" onload="this.classList.add('on')"></div>
+      <div class="d-hero-overlay"></div>
+      <button class="d-close" onclick="close_()">✕</button>
+      <div class="d-hero-content">
         <div class="d-fit-badge">
           <div class="d-fit-dot" style="background:${f.fill}"></div>
-          <span style="color:${f.color}">${f.label}</span>
+          <span>${f.label}</span>
         </div>
         <div class="d-name">${h.name}</div>
         <div class="d-sub">${h.sub}</div>
+        <div class="vrow">${(h.vibe||[]).map(v=>`<span class="vtag" style="background:${f.stroke}">${v}</span>`).join('')}</div>
       </div>
-      <button class="d-close" onclick="close_()">✕</button>
     </div>
-    <div class="d-hero"><div class="iw" id="hi-${id}"><img src="" alt="${h.name}" onload="this.classList.add('on')"></div></div>
-    <div class="vrow">${(h.vibe||[]).map(v=>`<span class="vtag" style="background:${f.stroke}">${v}</span>`).join('')}</div>
     <div class="dbody">
       <div class="sec"><div class="sect">Why this colour?</div>
         <div class="fit-banner" style="background:${f.bg}">
