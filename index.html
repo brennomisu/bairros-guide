@@ -41,7 +41,13 @@ async function checkPwd(){
     const g = document.getElementById('gate');
     g.style.transition = 'opacity .4s';
     g.style.opacity = '0';
-    setTimeout(()=>{g.remove(); if(typeof showUI==='function')showUI();}, 400);
+    setTimeout(()=>{
+      g.remove();
+      // Only call showUI() if initGM() hasn't already set it up.
+      // If it has (_uiShown=true), photos are already loading on live elements —
+      // calling showUI() again would recreate the chip <img> elements and lose those photos.
+      if(!window._uiShown && typeof showUI==='function') showUI();
+    }, 400);
   } else {
     const inp = document.getElementById('gate-input');
     const err = document.getElementById('gate-err');
@@ -273,21 +279,22 @@ img { display: block }
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 200;
-  /* Airbnb-style: opaque at top → transparent at bottom, map bleeds through */
+  /* Dark scrim at top fading to transparent — same technique as card titles */
   background: linear-gradient(
     to bottom,
-    rgba(255,255,255,0.97) 0%,
-    rgba(255,255,255,0.97) 52%,
-    rgba(255,255,255,0.0) 100%
+    rgba(0,0,0,0.46) 0%,
+    rgba(0,0,0,0.18) 52%,
+    rgba(0,0,0,0.0) 100%
   );
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border-bottom: none;
   padding: calc(10px + var(--safe-t, 0px)) 16px 32px;
 }
-.ti .ey { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--blue); margin-bottom: 2px }
-.ti h1 { font-family: var(--font-display); font-size: 20px; font-weight: 700; letter-spacing: -.4px; color: var(--label) }
-.ti h1 em { font-style: normal; color: var(--label-2) }
+/* White text on the dark scrim header */
+.ti .ey { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.82); margin-bottom: 2px }
+.ti h1 { font-family: var(--font-display); font-size: 20px; font-weight: 700; letter-spacing: -.4px; color: #fff; text-shadow: 0 1px 5px rgba(0,0,0,.35) }
+.ti h1 em { font-style: normal; color: rgba(255,255,255,.72) }
 
 /* ── Mobile: chip bar ── */
 #chips {
@@ -1542,6 +1549,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 function initGM(){
   document.getElementById('setup').style.display='none';
   showUI();
+  window._uiShown=true; // flag: initGM owns the UI — checkPwd must NOT call showUI() again
   gmap=new google.maps.Map(document.getElementById('map'),{
     center:{lat:38.714,lng:-9.148},zoom:13,
     gestureHandling:'greedy',disableDefaultUI:false,
@@ -2007,10 +2015,14 @@ function openMid(){
   document.getElementById('bd').classList.remove('on');
   document.getElementById('chips').classList.add('recede');
 }
-function openFull(){
+function openFull(vel=0){
   const sh=document.getElementById('sheet');
   sh.getBoundingClientRect();
-  sh.style.transition='transform 0.40s cubic-bezier(0.32,0.72,0,1)';
+  // Velocity-aware duration: faster swipe → shorter, snappier transition
+  // vel is px/ms (negative = upward). Typical range: 0 (tap) to -4 (fast flick).
+  const speed=Math.min(Math.abs(vel),4);
+  const dur=Math.max(0.26, 0.44-speed*0.044).toFixed(2);
+  sh.style.transition=`transform ${dur}s cubic-bezier(0.32,0.72,0,1)`;
   sh.style.transform='translateY(0)';
   sheetState='full'; // lastDetent intentionally NOT updated — remember where we came from
   document.getElementById('bd').classList.add('on');
@@ -2071,11 +2083,11 @@ function openFull(){
       if(velY>0.4||delta>VH*0.15) { close_(); }
       else                          { openFull(); } // snap back if barely moved
     } else if(sheetState==='mid'){
-      if(velY<-0.35||delta<-VH*0.10)  { openFull(); }
+      if(velY<-0.35||delta<-VH*0.10)  { openFull(velY); } // pass velocity for natural feel
       else if(velY>0.5||delta>VH*0.16){ close_(); }
       else                              { openMid(); }
     } else { // small
-      if(velY<-0.35||delta<-VH*0.10)  { openFull(); }
+      if(velY<-0.35||delta<-VH*0.10)  { openFull(velY); } // pass velocity for natural feel
       else if(velY>0.5||delta>VH*0.16){ close_(); }
       else                              { openSmall(); }
     }
@@ -2089,21 +2101,22 @@ function openFull(){
 ─────────────────────────────────────────────────────────────────── */
 (function(){
   const sc=document.getElementById('sc');
-  let scStartY=0, scAtTop=false;
+  let scStartY=0, scStartT=0, scAtTop=false;
 
   sc.addEventListener('touchstart',e=>{
     scStartY=e.touches[0].clientY;
-    // Snapshot whether content is at the very top when this gesture begins.
-    // If yes and the user then swipes down, collapse the sheet (iOS Maps / Airbnb behaviour).
+    scStartT=Date.now();
     scAtTop=(sc.scrollTop<=0);
   },{passive:true});
 
   sc.addEventListener('touchmove',e=>{
     if(dragActive)return;
     const dy=e.touches[0].clientY-scStartY;
+    // Compute velocity (px/ms, negative = upward) so openFull can tune duration
+    const scVel=dy/Math.max(Date.now()-scStartT,1);
 
     // Small or mid → full: finger swipes up inside content area
-    if((sheetState==='small'||sheetState==='mid')&&dy<-12){openFull();return;}
+    if((sheetState==='small'||sheetState==='mid')&&dy<-12){openFull(scVel);return;}
 
     // Full → close: gesture started at scroll top and finger swipes down
     if(sheetState==='full'&&scAtTop&&dy>14){ close_(); }
