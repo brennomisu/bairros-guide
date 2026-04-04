@@ -330,15 +330,15 @@ img { display: block }
 .chip-header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 11px 11px 9px;
+  gap: 7px;
+  padding: 13px 13px 10px;
 }
 .chip-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0 }
 .chip-name { font-size: 13px; font-weight: 700; letter-spacing: -.25px; line-height: 1 }
 /* Hero thumbnail — full-bleed within card */
 .chip-img {
   width: 100%;
-  height: 86px;
+  height: 92px;
   overflow: hidden;
   background: var(--bg-3);
   position: relative;
@@ -363,9 +363,9 @@ img { display: block }
 .chip-img img.on { opacity: 1 }
 .chip-vibes {
   display: flex;
-  gap: 4px;
+  gap: 5px;
   flex-wrap: wrap;
-  padding: 7px 10px 11px;
+  padding: 9px 12px 13px;
 }
 .chip-vibe {
   font-size: 10px;
@@ -1044,6 +1044,30 @@ img { display: block }
   font-weight: 500;
 }
 
+/* ── Gradient vignette behind card bar ─────────────────────────── */
+/* Gives cards a visual floor so they read clearly against the map  */
+#chip-fade {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 180px;
+  z-index: 98; /* below chips (100) and sheet (201) */
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    rgba(242,242,240,.92) 0%,
+    rgba(242,242,240,.55) 45%,
+    transparent 100%
+  );
+}
+@media(max-width:767px){ #chip-fade { display:block } }
+
+/* ── Google Maps UI cleanup ──────────────────────────────────────── */
+/* Hide keyboard-shortcut hint and the redundant bottom-right text   */
+.gm-style-cc { display:none!important }
+/* Hide the "Map data" / "Terms" text row */
+.gm-style-cc + div { display:none!important }
+
 </style>
 </head>
 <body>
@@ -1073,6 +1097,7 @@ img { display: block }
 </div>
 
 <div id="tb"><div class="ti"><div class="ey">Your Lisbon</div><h1>Bairros <em>Guide</em></h1></div></div>
+<div id="chip-fade"></div>
 <div id="chips"></div>
 <div id="map"></div>
 <div id="bd" onclick="close_()"></div>
@@ -1565,7 +1590,7 @@ function initGM(){
     HOODS.forEach((h,i)=>setTimeout(()=>{
       const w=document.getElementById('ci-'+h.id);
       const img=w?.querySelector('img');
-      if(img&&!img.src)lp(h.S,img,400);
+      if(img)lp(h.S,img,400);
     },i*120));
   }
 
@@ -1643,6 +1668,18 @@ function chaikin(coords, iter=4){
     m.addListener('click',()=>pick(h.id));
     polys[h.id].marker=m;
   });
+
+  // ── Zoom-dependent label visibility ─────────────────────────────
+  // Rule: only show name when polygon is large enough to contain it.
+  // At zoom ≥ 15 every polygon is big enough; below that hide names.
+  function syncLabelVisibility(){
+    const z=gmap.getZoom();
+    HOODS.forEach(h=>{
+      if(polys[h.id]?.marker) polys[h.id].marker.setVisible(z>=15);
+    });
+  }
+  gmap.addListener('zoom_changed',syncLabelVisibility);
+  syncLabelVisibility(); // apply at startup (zoom 13 → hidden)
 
   // ── BnB reference pins ──────────────────────────────────────────
   const BNB_LOCATIONS = [
@@ -1999,6 +2036,24 @@ function openFull(){
       else if(velY>0.5||delta>VH*0.16){ close_(); }
       else                              { openMid(); } // snap back
     }
+  },{passive:true});
+})();
+
+/* ── Scroll content up at mid detent → expand to full ─────────────
+   When the sheet is at mid and the user begins scrolling the detail
+   content upward, expand to full before the scroll starts — feels
+   exactly like iOS Maps / Airbnb.
+─────────────────────────────────────────────────────────────────── */
+(function(){
+  const sc=document.getElementById('sc');
+  let scStartY=0;
+  sc.addEventListener('touchstart',e=>{
+    scStartY=e.touches[0].clientY;
+  },{passive:true});
+  sc.addEventListener('touchmove',e=>{
+    if(sheetState!=='mid'||dragActive)return;
+    const dy=e.touches[0].clientY-scStartY; // negative = finger moves up = scroll intent
+    if(dy<-12) openFull();
   },{passive:true});
 })();
 </script>
