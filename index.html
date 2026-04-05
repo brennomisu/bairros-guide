@@ -2088,16 +2088,29 @@ function close_(){
    Spring curve matches iOS UISheetPresentationController.
 ═══════════════════════════════════════════════════════════════════ */
 // ── Small detent ──
-// In detail mode (map tap): translateY so the full hero photo (290px)
-// + 24px breathing room is visible — nothing cut off.
-// Otherwise (chip list): fixed 40% visible.
+// In detail mode (map tap): position the sheet so the full hero photo
+// sits just above the browser chrome — using visualViewport.height
+// (true visible px, iOS Safari chrome excluded) rather than innerHeight.
+// Otherwise (chip list): fixed 60% translateY.
 function smallTY(){
   const sh=document.getElementById('sheet');
   if(sh.classList.contains('detail-mode')){
-    // Visible sheet area = 0.92×vh - TY  →  set TY so visible = 314px
-    return Math.max(0, Math.round(window.innerHeight*0.92) - 314);
+    // True visible height: visualViewport is accurate on iOS Safari;
+    // fall back to innerHeight on other browsers.
+    const visH = window.visualViewport
+      ? Math.round(window.visualViewport.height)
+      : Math.round(window.innerHeight);
+    // Sheet height is sized off innerHeight (92vh), not visualViewport.
+    const sheetH = Math.round(window.innerHeight * 0.92);
+    // Sheet's natural top (before transform) = innerHeight - sheetH = 8% of innerHeight.
+    const sheetNaturalTop = window.innerHeight - sheetH;
+    // We want: sheetNaturalTop + TY + photoH + pad = visH
+    // → TY = visH - sheetNaturalTop - photoH - pad
+    const photoH = 290; // .d-hero-full height
+    const pad    = 20;  // breathing room above browser chrome
+    return Math.max(0, visH - sheetNaturalTop - photoH - pad);
   }
-  return Math.round(window.innerHeight*0.60);
+  return Math.round(window.innerHeight * 0.60);
 }
 function openSmall(){
   const sh=document.getElementById('sheet');
