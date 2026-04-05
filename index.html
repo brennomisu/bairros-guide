@@ -484,11 +484,11 @@ img { display: block }
 #sheet.detail-mode #hdl::after {
   background: rgba(255,255,255,.88);
 }
-/* Close button injected as direct child of #sheet — above #hdl */
-.d-close-sheet {
+/* Close button injected inside #hdl — sits within the handle's own layer */
+.d-close-inner {
   position: absolute;
-  top: 14px; right: 16px;
-  z-index: 20;
+  top: 7px; right: 10px;
+  z-index: 15;
 }
 
 /* Sidebar header */
@@ -621,6 +621,9 @@ img { display: block }
   background: var(--bg);
   display: none!important;
 }
+/* In detail mode: sc is transparent so #sheet's dark bg shows in any gap above photo */
+#sheet.detail-mode #sc { background: transparent; }
+#sheet.detail-mode .dbody { background: var(--bg); }
 #sc.active { display: flex!important; flex-direction: column }
 #sc::-webkit-scrollbar { width: 0 }
 
@@ -1962,16 +1965,18 @@ function pick(id,fromMap=false){
       </div>
     </div>`).join('');
 
-  const shEl=document.getElementById('sheet');
-  shEl.classList.add('detail-mode');
-  // Inject close button directly into #sheet (above #hdl in stacking order)
-  const existingClose=shEl.querySelector('.d-close-sheet');
-  if(existingClose) existingClose.remove();
+  document.getElementById('sheet').classList.add('detail-mode');
+  // Inject close button INTO #hdl so it sits in the same z-layer and
+  // stopPropagation on touchstart prevents the drag handler from firing
+  const hdlEl=document.getElementById('hdl');
+  const existingX=hdlEl.querySelector('.d-close-inner');
+  if(existingX) existingX.remove();
   const closeBtn=document.createElement('button');
-  closeBtn.className='d-close d-close-sheet';
+  closeBtn.className='d-close d-close-inner';
   closeBtn.innerHTML='✕';
-  closeBtn.onclick=close_;
-  shEl.appendChild(closeBtn);
+  closeBtn.addEventListener('touchstart',e=>{e.stopPropagation();},{passive:false});
+  closeBtn.addEventListener('click',()=>close_());
+  hdlEl.appendChild(closeBtn);
 
   document.getElementById('sc').innerHTML=`
     <div class="d-hero-full">
@@ -2061,10 +2066,10 @@ function close_(){
   });
   document.querySelectorAll('.ni,.chip').forEach(el=>el.classList.remove('on'));
   document.getElementById('bd').classList.remove('on');
-  const sheetEl=document.getElementById('sheet');
-  sheetEl.classList.remove('detail-mode');
-  const dcb=sheetEl.querySelector('.d-close-sheet');
-  if(dcb) dcb.remove();
+  document.getElementById('sheet').classList.remove('detail-mode');
+  const hdlEl2=document.getElementById('hdl');
+  const xi=hdlEl2?.querySelector('.d-close-inner');
+  if(xi) xi.remove();
   if(mob()){
     const sh=document.getElementById('sheet');
     sh.getBoundingClientRect(); // flush pending paint so transition starts from current position
