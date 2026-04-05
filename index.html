@@ -644,8 +644,10 @@ img { display: block }
 .d-hero-full .iw img {
   width: 100%; height: 100%;
   object-fit: cover;
+  /* No fade-in: photo appears instantly so the opacity change never
+     triggers a compositing repaint that would flash the text layer */
   opacity: 0;
-  transition: opacity .5s ease;
+  transition: none;
 }
 .d-hero-full .iw img.on { opacity: 1 }
 /* Dual scrim: stronger at bottom (for text) + bottom-left vignette for badge readability */
@@ -684,12 +686,16 @@ img { display: block }
   -webkit-tap-highlight-color: transparent;
 }
 .d-close:hover { background: rgba(0,0,0,0.55) }
-/* Text content overlaid at the bottom of the hero */
+/* Text content overlaid at the bottom of the hero.
+   translateZ(0) promotes to its own GPU layer — immune to repaints
+   triggered by the photo or overlay animating beneath it. */
 .d-hero-content {
   position: absolute;
   bottom: 0; left: 0; right: 0;
   z-index: 3;
   padding: 0 18px 16px;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 .d-fit-badge {
   display: inline-flex;
