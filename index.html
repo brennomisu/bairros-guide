@@ -2093,16 +2093,16 @@ function close_(){
 // 230px offset = 290px photo minus 60px of sky at top (no overlay text there).
 // Overlay title/badge/vibes sit at photo bottom — always fully visible.
 // Scales consistently across all iPhone sizes:
-//   iPhone SE  (667px) → TY ≈ 384px  (~58% map)
-//   iPhone 14  (844px) → TY ≈ 547px  (~65% map)
-//   iPhone 16  (852px) → TY ≈ 554px  (~65% map)
-//   iPhone 16 Max (932px) → TY ≈ 628px  (~67% map)
+//   iPhone SE  (667px) → TY ≈ 350px  (~52% map)
+//   iPhone 14  (844px) → TY ≈ 513px  (~61% map)
+//   iPhone 16  (852px) → TY ≈ 520px  (~61% map)
+//   iPhone 16 Max (932px) → TY ≈ 594px  (~64% map)
 // Otherwise (chip list): standard 60% translateY.
 function smallTY(){
   const sh=document.getElementById('sheet');
   if(sh.classList.contains('detail-mode')){
     const sheetH = Math.round(window.innerHeight * 0.92);
-    return Math.max(0, sheetH - 230); // 230 = photo(290) - 60px top sky
+    return Math.max(0, sheetH - 264); // 264 = photo(290) - 26px top sky
   }
   return Math.round(window.innerHeight * 0.60);
 }
