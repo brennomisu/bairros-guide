@@ -2088,27 +2088,15 @@ function close_(){
    Spring curve matches iOS UISheetPresentationController.
 ═══════════════════════════════════════════════════════════════════ */
 // ── Small detent ──
-// In detail mode (map tap): position the sheet so the full hero photo
-// sits just above the browser chrome — using visualViewport.height
-// (true visible px, iOS Safari chrome excluded) rather than innerHeight.
-// Otherwise (chip list): fixed 60% translateY.
+// In detail mode (map tap): sheet top sits at 52% of innerHeight,
+// leaving 40% visible (≈280px). Bubbles inside the photo sit at
+// ~252px from sheet top — safely visible above the browser chrome.
+// The map gets ~60% of screen = well visible. No white body content shown.
+// Otherwise (chip list): standard 60% translateY.
 function smallTY(){
   const sh=document.getElementById('sheet');
   if(sh.classList.contains('detail-mode')){
-    // True visible height: visualViewport is accurate on iOS Safari;
-    // fall back to innerHeight on other browsers.
-    const visH = window.visualViewport
-      ? Math.round(window.visualViewport.height)
-      : Math.round(window.innerHeight);
-    // Sheet height is sized off innerHeight (92vh), not visualViewport.
-    const sheetH = Math.round(window.innerHeight * 0.92);
-    // Sheet's natural top (before transform) = innerHeight - sheetH = 8% of innerHeight.
-    const sheetNaturalTop = window.innerHeight - sheetH;
-    // We want: sheetNaturalTop + TY + photoH + pad = visH
-    // → TY = visH - sheetNaturalTop - photoH - pad
-    const photoH = 290; // .d-hero-full height
-    // Photo bottom flush with visual viewport — just 8px above browser chrome
-    return Math.max(0, Math.round(visH - sheetNaturalTop - photoH - 8));
+    return Math.round(window.innerHeight * 0.52);
   }
   return Math.round(window.innerHeight * 0.60);
 }
