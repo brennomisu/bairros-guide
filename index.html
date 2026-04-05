@@ -2087,12 +2087,23 @@ function close_(){
    Full ≈ 92 % of viewport visible  (translateY 0)
    Spring curve matches iOS UISheetPresentationController.
 ═══════════════════════════════════════════════════════════════════ */
-// ── Small detent: ~1/3 of screen visible — used when tapping map polygons
+// ── Small detent ──
+// In detail mode (map tap): translateY so the full hero photo (290px)
+// + 24px breathing room is visible — nothing cut off.
+// Otherwise (chip list): fixed 40% visible.
+function smallTY(){
+  const sh=document.getElementById('sheet');
+  if(sh.classList.contains('detail-mode')){
+    // Visible sheet area = 0.92×vh - TY  →  set TY so visible = 314px
+    return Math.max(0, Math.round(window.innerHeight*0.92) - 314);
+  }
+  return Math.round(window.innerHeight*0.60);
+}
 function openSmall(){
   const sh=document.getElementById('sheet');
   sh.getBoundingClientRect();
   sh.style.transition='transform 0.44s cubic-bezier(0.32,0.72,0,1)';
-  sh.style.transform=`translateY(${Math.round(window.innerHeight*0.60)}px)`;
+  sh.style.transform=`translateY(${smallTY()}px)`;
   sheetState='small'; lastDetent='small';
   document.getElementById('bd').classList.remove('on');
   document.getElementById('chips').classList.add('recede');
@@ -2133,7 +2144,7 @@ function openFull(vel=0){
 
   function getBaseTY(){
     if(sheetState==='full')  return 0;
-    if(sheetState==='small') return Math.round(window.innerHeight*0.60);
+    if(sheetState==='small') return smallTY(); // uses detail-mode-aware calc
     return Math.round(window.innerHeight*0.30); // mid
   }
 
