@@ -2088,15 +2088,22 @@ function close_(){
    Spring curve matches iOS UISheetPresentationController.
 ═══════════════════════════════════════════════════════════════════ */
 // ── Small detent ──
-// In detail mode (map tap): sheet top sits at 52% of innerHeight,
-// leaving 40% visible (≈280px). Bubbles inside the photo sit at
-// ~252px from sheet top — safely visible above the browser chrome.
-// The map gets ~60% of screen = well visible. No white body content shown.
+// In detail mode (map tap): content-fit snap — sheet stops exactly where
+// the 290px hero photo is fully visible, with zero white body below.
+// Formula mirrors iOS UISheetPresentationController custom detent:
+//   TY = sheetHeight - contentHeightPx
+// sheetHeight ≈ 92% of viewport (sheet starts at top:8%).
+// Works consistently across all iPhone sizes:
+//   iPhone SE  (667px) → TY ≈ 324px  (~49% map)
+//   iPhone 14  (844px) → TY ≈ 487px  (~58% map)
+//   iPhone 16  (852px) → TY ≈ 494px  (~58% map)
+//   iPhone 16 Max (932px) → TY ≈ 568px  (~61% map)
 // Otherwise (chip list): standard 60% translateY.
 function smallTY(){
   const sh=document.getElementById('sheet');
   if(sh.classList.contains('detail-mode')){
-    return Math.round(window.innerHeight * 0.60);
+    const sheetH = Math.round(window.innerHeight * 0.92);
+    return Math.max(0, sheetH - 290); // fixed 290px = exact photo height
   }
   return Math.round(window.innerHeight * 0.60);
 }
