@@ -2107,11 +2107,8 @@ function smallTY(){
     // We want: sheetNaturalTop + TY + photoH + pad = visH
     // → TY = visH - sheetNaturalTop - photoH - pad
     const photoH = 290; // .d-hero-full height
-    // Two anchors: tyHigh = photo flush to chrome (new), tyLow = 314px visible (old)
-    const tyHigh = visH - sheetNaturalTop - photoH - 20;
-    const tyLow  = sheetH - 314;
-    // Split the difference: halfway between the two positions
-    return Math.max(0, Math.round((tyHigh + tyLow) / 2));
+    // Photo bottom flush with visual viewport — just 8px above browser chrome
+    return Math.max(0, Math.round(visH - sheetNaturalTop - photoH - 8));
   }
   return Math.round(window.innerHeight * 0.60);
 }
